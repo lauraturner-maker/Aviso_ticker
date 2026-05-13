@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviso Wealth – Market Ticker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --aviso-navy:    #0A2240;
+    --aviso-navy-dk: #061628;
+    --aviso-teal:    #00AFA0;
+    --aviso-teal-lt: #00C9B8;
+    --panel:         #0d1e33;
+    --panel-lt:      #112540;
+    --border:        #1a3050;
+    --green:         #1DB87A;
+    --red:           #E8374A;
+    --amber:         #F5A623;
+    --white:         #E2EBF4;
+    --muted:         #3A567A;
+    --text-dim:      #7A9ABF;
+  }
+
+  body {
+    background: var(--aviso-navy-dk);
+    font-family: 'Open Sans', sans-serif;
+    overflow: hidden;
+    height: 58px;
+    display: flex;
+    align-items: center;
+  }
+
+  .ticker-wrap {
+    width: 100%;
+    height: 58px;
+    background: var(--panel);
+    border-top: 3px solid var(--aviso-teal);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Aviso badge ── */
+  .ticker-label {
+    flex-shrink: 0;
+    background: var(--aviso-navy);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 20px 0 14px;
+    gap: 10px;
+    position: relative;
+    z-index: 10;
+    white-space: nowrap;
+    border-right: 1px solid rgba(0,175,160,0.25);
+  }
+
+  /* angled right chevron */
+  .ticker-label::after {
+    content: '';
+    position: absolute;
+    right: -16px;
+    top: 0;
+    width: 0; height: 0;
+    border-top: 58px solid transparent;
+    border-left: 16px solid var(--aviso-navy);
+    z-index: 11;
+  }
+
+  .aviso-mark {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+  }
+
+  .aviso-wordmark {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #fff;
+    line-height: 1;
+    text-transform: lowercase;
+  }
+
+  .aviso-wordmark span {
+    color: var(--aviso-teal);
+  }
+
+  .aviso-sub {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .aviso-teal-bar {
+    height: 2px;
+    width: 100%;
+    background: var(--aviso-teal);
+    border-radius: 1px;
+    margin-top: 2px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--aviso-teal-lt);
+    background: rgba(0,175,160,0.1);
+    padding: 3px 8px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,175,160,0.28);
+    margin-left: 2px;
+  }
+
+  .pulse-dot {
+    width: 6px; height: 6px;
+    background: var(--aviso-teal);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.6); }
+  }
+
+  /* ── Scroll track ── */
+  .ticker-scroll-outer {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+    padding-left: 28px;
+  }
+
+  .ticker-scroll-outer::before {
+    content: '';
+    position: absolute; left: 0; top: 0;
+    width: 40px; height: 100%;
+    background: linear-gradient(to right, var(--panel), transparent);
+    z-index: 5; pointer-events: none;
+  }
+
+  .ticker-scroll-outer::after {
+    content: '';
+    position: absolute; right: 0; top: 0;
+    width: 60px; height: 100%;
+    background: linear-gradient(to right, transparent, var(--panel));
+    z-index: 5; pointer-events: none;
+  }
+
+  .ticker-track {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    white-space: nowrap;
+    animation: scroll 58s linear infinite;
+    will-change: transform;
+  }
+  .ticker-track:hover { animation-play-state: paused; }
+
+  @keyframes scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── Index pills ── */
+  .index-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 28px 0 0;
+    user-select: none;
+  }
+
+  .index-name {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--aviso-teal);
+    background: rgba(0,175,160,0.1);
+    border: 1px solid rgba(0,175,160,0.22);
+    padding: 2px 7px;
+    border-radius: 2px;
+  }
+
+  /* ── Stock items ── */
+  .stock-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 28px 0 0;
+    cursor: default;
+    user-select: none;
+    transition: opacity 0.15s;
+  }
+  .stock-item:hover { opacity: 0.65; }
+
+  .stock-symbol {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.6px;
+    color: var(--white);
+  }
+
+  .exch-badge {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 8.5px;
+    color: var(--muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    padding: 1px 4px;
+    border-radius: 2px;
+    letter-spacing: 0.4px;
+  }
+
+  .stock-price {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.2px;
+  }
+
+  .cad-label {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 8.5px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+  }
+
+  .chg-pill {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    letter-spacing: 0.1px;
+  }
+  .chg-pill.up   { color: var(--green); background: rgba(29,184,122,0.1);  border: 1px solid rgba(29,184,122,0.22); }
+  .chg-pill.down { color: var(--red);   background: rgba(232,55,74,0.09);  border: 1px solid rgba(232,55,74,0.2);  }
+  .chg-pill.flat { color: var(--amber); background: rgba(245,166,35,0.09); border: 1px solid rgba(245,166,35,0.2); }
+
+  .divider {
+    display: inline-block;
+    width: 1px; height: 22px;
+    background: var(--border);
+    margin-right: 28px;
+    opacity: 0.7;
+    vertical-align: middle;
+  }
+
+  /* ── Clock ── */
+  .ticker-time {
+    flex-shrink: 0;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    padding: 0 14px;
+    border-left: 1px solid var(--border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    white-space: nowrap;
+  }
+  .time-exchange {
+    font-size: 8.5px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  #timeVal { font-size: 11px; letter-spacing: 0.4px; }
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap">
+
+  <!-- Aviso Wealth badge -->
+  <div class="ticker-label">
+    <div class="aviso-mark">
+      <div class="aviso-wordmark">aviso<span>.</span></div>
+      <div class="aviso-teal-bar"></div>
+      <div class="aviso-sub">Wealth</div>
+    </div>
+    <div class="live-badge"><div class="pulse-dot"></div>LIVE</div>
+  </div>
+
+  <!-- Scrolling track -->
+  <div class="ticker-scroll-outer">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <!-- Clock -->
+  <div class="ticker-time">
+    <span class="time-exchange" id="exchangeLabel">TSX · ET</span>
+    <span id="timeVal">—</span>
+  </div>
+
+</div>
+
+<script>
+  const indices = [
+    { name: "S&P/TSX", value: 24871.40, change: +143.20, pct: +0.58, decs: 2 },
+    { name: "TSX 60",  value:  1521.35, change:   +8.74, pct: +0.58, decs: 2 },
+    { name: "USD/CAD", value:    1.3622, change:  -0.0018,pct: -0.13, decs: 4 },
+    { name: "10Y GoC", value:    3.42,  change:   +0.04, pct: +1.18, decs: 2 },
+  ];
+
+  const stocks = [
+    { sym: "RY",   price: 148.23, change: +1.92, pct: +1.31 },
+    { sym: "TD",   price:  82.47, change: -0.63, pct: -0.76 },
+    { sym: "BNS",  price:  71.88, change: +0.44, pct: +0.62 },
+    { sym: "BMO",  price: 124.30, change: +0.87, pct: +0.71 },
+    { sym: "CM",   price:  68.12, change: -0.28, pct: -0.41 },
+    { sym: "CNR",  price: 167.55, change: -1.10, pct: -0.65 },
+    { sym: "SU",   price:  56.72, change: +0.95, pct: +1.70 },
+    { sym: "ENB",  price:  59.14, change: +0.38, pct: +0.65 },
+    { sym: "TRP",  price:  66.88, change: -0.22, pct: -0.33 },
+    { sym: "MFC",  price:  42.15, change: +0.62, pct: +1.50 },
+    { sym: "SLF",  price:  75.40, change: +0.00, pct:  0.00 },
+    { sym: "BCE",  price:  34.22, change: -0.48, pct: -1.38 },
+    { sym: "SHOP", price:  98.65, change: +3.21, pct: +3.36 },
+    { sym: "ATD",  price:  77.90, change: +0.55, pct: +0.71 },
+    { sym: "CP",   price: 100.44, change: +0.33, pct: +0.33 },
+    { sym: "BAM",  price:  58.77, change: +0.89, pct: +1.54 },
+  ];
+
+  function dir(v)   { return v > 0 ? 'up' : v < 0 ? 'down' : 'flat'; }
+  function arrow(v) { return v > 0 ? '▲' : v < 0 ? '▼' : '■'; }
+  function sign(v)  { return v > 0 ? '+' : ''; }
+
+  function idxHtml(idx) {
+    const d = dir(idx.change), a = arrow(idx.change), s = sign(idx.change);
+    return `<span class="index-item">
+      <span class="index-name">${idx.name}</span>
+      <span class="stock-price">${idx.value.toFixed(idx.decs)}</span>
+      <span class="chg-pill ${d}">${a} ${s}${idx.pct.toFixed(2)}%</span>
+    </span><span class="divider"></span>`;
+  }
+
+  function stkHtml(s) {
+    const d = dir(s.change), a = arrow(s.change), sg = sign(s.change);
+    return `<span class="stock-item">
+      <span class="stock-symbol">${s.sym}</span>
+      <span class="exch-badge">TSX</span>
+      <span class="stock-price">$${s.price.toFixed(2)}</span>
+      <span class="cad-label">CAD</span>
+      <span class="chg-pill ${d}">${a} ${sg}${Math.abs(s.change).toFixed(2)}&nbsp;${sg}${s.pct.toFixed(2)}%</span>
+    </span><span class="divider"></span>`;
+  }
+
+  function build() {
+    const html = indices.map(idxHtml).join('') + stocks.map(stkHtml).join('');
+    document.getElementById('tickerTrack').innerHTML = html + html;
+  }
+
+  function drift() {
+    stocks.forEach(s => {
+      const d  = (Math.random() - 0.50) * 0.20;
+      s.price  = Math.max(1, s.price + d);
+      s.change += d;
+      s.pct    = (s.change / (s.price - s.change)) * 100;
+    });
+    indices.forEach(i => {
+      const d  = (Math.random() - 0.49) * (i.decs > 2 ? 0.0015 : 7);
+      i.value  = Math.max(0.001, i.value + d);
+      i.change += d;
+      i.pct    = (i.change / (i.value - i.change)) * 100;
+    });
+    build();
+  }
+
+  function marketOpen() {
+    const et   = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+    const day  = et.getDay(), h = et.getHours(), m = et.getMinutes();
+    const mins = h * 60 + m;
+    return day >= 1 && day <= 5 && mins >= 570 && mins < 960;
+  }
+
+  function clock() {
+    const et   = new Date().toLocaleTimeString('en-CA', { timeZone: 'America/Toronto', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dt   = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric' });
+    const open = marketOpen();
+    const tEl  = document.getElementById('timeVal');
+    const lEl  = document.getElementById('exchangeLabel');
+    tEl.textContent = `${dt}  ${et}`;
+    tEl.style.color = open ? '#1DB87A' : '#3A567A';
+    lEl.textContent = open ? 'TSX · OPEN' : 'TSX · CLOSED';
+    lEl.style.color = open ? '#00AFA0'    : '#3A567A';
+  }
+
+  build();
+  clock();
+  setInterval(clock, 1000);
+  setInterval(drift, 4500);
+</script>
+
+</body>
+</html>
